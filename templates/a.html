@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+</head>
+<body>
+    <div id="container">
+      <br/>
+      <button v-on:click="toggle()" type="button">TOG</button>
+    </div>
+    <div id="controller" v-show="tog">
+      <img :src="image"/>
+      <button v-on:click="start()">START</button>
+      <button v-on:click="stop()">STOP</button>
+      <button v-on:click="release()">CAMRELEASE</button>
+      <form v-on:submit.prevent="submitForm">
+      <br/>
+          brightness : <input name = "brightness" type = 'number' min = '-255' max = '255' v-model='brightness'>
+          quality : <input name = "quality" type = 'number' min = '0' max = '100' v-model='quality'>
+          <input type = 'submit' value = SUBMIT>
+      </form>
+    </div>
+
+    <script>
+  
+      const mainVM = new Vue({
+        el: "#container",
+        data() {
+          return {
+            msg: 'start',
+          };
+        },
+        methods: {
+          toggle() {
+            controllerVM.tog =! controllerVM.tog;
+            }
+      },
+    });
+    
+    const controllerVM = new Vue({
+      el: "#controller",
+      data() {
+        return {
+          start_btn: 'PLAY',
+          stop_btn: 'STOP',
+          tog : true,
+          image: null,
+          repeat : null,
+          brightness : 0,
+          quality : 0,
+        }
+      },
+      methods: {
+        start() {
+          if(!this.repeat){
+            this.repeat = setInterval(()=>{
+                this.getImg()
+            }, 33);}
+        },
+        release(){
+          const path = 'http://127.0.0.1:8000/';
+          clearInterval(this.repeat);
+          this.repeat = null;
+            axios.get(path + 'cam_release')
+              .then((res) => {
+              })
+              .catch((error) => {
+                  console.error(error)
+              });
+        },
+        stop() {
+          clearInterval(this.repeat);
+          this.repeat = null;
+        },
+        getImg() {
+          const path = 'http://127.0.0.1:8000/';
+          axios.get(path + 'video_feed')
+          .then((res) => {
+              console.log(this.toggle)
+              var data = 'data:' + res.headers['content-type'] + ';base64,'+ res.data;
+              this.image = data;
+          })
+          .catch((error) => {
+              console.error(error)
+          });
+        },
+        submitForm:function(){
+          const path = 'http://127.0.0.1:8000/';
+          
+          var params = {
+              brightness : this.brightness,
+              quality :  this.quality,
+          }
+          
+          axios.post(path + 'set_api', params)
+          .then((res) => {
+              console.log(res)
+          }).catch((error) => {
+              console.error(error)
+          });
+        }
+      }
+    });
+    
+    </script>
+      
+</body>
+</html> 
